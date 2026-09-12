@@ -955,12 +955,12 @@
 
   <script>
     // =========================================================================
-    // BACKEND API CONFIGURATION (For Vercel + Railway Deployment)
-    // If Frontend is on Vercel, paste your Railway Backend URL below:
-    // e.g. const RAILWAY_BACKEND_URL = "https://my-payment-api.up.railway.app";
-    // If left empty (""), it automatically defaults to the current origin.
+    // BACKEND API CONFIGURATION
+    // When deployed on Vercel, vercel.json automatically proxies all /api/*
+    // requests directly to your Railway backend (upi-auto-backend-production.up.railway.app).
+    // Leave empty ("") to use Vercel's clean domain edge proxy!
     // =========================================================================
-    const RAILWAY_BACKEND_URL = "https://upi-auto-backend-production.up.railway.app";
+    const RAILWAY_BACKEND_URL = "";
 
     const API_BASE_URL = (RAILWAY_BACKEND_URL && RAILWAY_BACKEND_URL.trim())
       ? RAILWAY_BACKEND_URL.trim().replace(/\/+$/, '')
