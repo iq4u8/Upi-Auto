@@ -1106,6 +1106,50 @@
       }
     });
 
+    // Fast in-browser image optimization (<50ms) to ensure lightning upload and OCR (<2s total)
+    function optimizeScreenshot(file) {
+      return new Promise((resolve) => {
+        if (file.size < 250 * 1024) {
+          resolve(file);
+          return;
+        }
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width;
+            let h = img.height;
+            const maxDim = 1024;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+              } else {
+                resolve(file);
+              }
+            }, 'image/jpeg', 0.88);
+          };
+          img.onerror = () => resolve(file);
+          img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(file);
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function handleAutoScreenshot(file) {
       const name = file.name.toLowerCase();
       if (!name.endsWith('.jpg') && !name.endsWith('.jpeg') && !name.endsWith('.png')) {
@@ -1119,8 +1163,9 @@
       loadingSubtitle.innerText = 'Detecting UTR & Amount';
       loadingModal.classList.add('active');
 
+      const optimizedFile = await optimizeScreenshot(file);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', optimizedFile);
 
       try {
         const res = await fetch(`${API_BASE_URL}/api/scan-screenshot`, {
